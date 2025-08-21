@@ -17,16 +17,16 @@ pub fn build(b: *std.Build) void {
     const use_gles = b.option(bool, "gles", "Build with GLES; not supported on MacOS") orelse false;
     const use_metal = b.option(bool, "metal", "Build with Metal; only supported on MacOS") orelse false;
 
-    const lib: *std.Build.Step.Compile = switch (shared) {
-        inline else => |x| switch (x) {
-            false => std.Build.addStaticLibrary,
-            true => std.Build.addSharedLibrary,
-        }(b, .{
-            .name = "glfw",
-            .target = target,
-            .optimize = optimize,
-        }),
-    };
+    const lib = b.addLibrary(.{ .name = "glfw", .linkage = .static, .root_module = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+    }) });
+
+    switch (shared) {
+        true => lib.linkage = .dynamic,
+        false => lib.linkage = .static,
+    }
+
     lib.addIncludePath(b.path("include"));
     //if (include_src) lib.addIncludePath(b.path("src"));
     lib.linkLibC();
